@@ -96,6 +96,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET); 
   OLED_ShowString(1, 1, "Timer Ready   ");
   OLED_ShowString(2, 1, "Press Key...  ");
 
@@ -104,52 +105,70 @@ int main(void)
 
   while (1)
   {
-	    if (is_timing == 0)
+	  // ==========================================
+    // 1. 检测按键启动计时
+    // ==========================================
+    if (is_timing == 0)
     {
-        // 按键引脚改成了 PB11
         if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_11) == GPIO_PIN_RESET) 
         {
-            HAL_Delay(20); 
+            HAL_Delay(20); // 消抖
             if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_11) == GPIO_PIN_RESET) 
             {
                 is_timing = 1;               
                 start_time = HAL_GetTick();  
                 
+                // 确保蜂鸣器是关着的
+                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET);
+                
                 OLED_Clear();                
                 OLED_ShowString(1, 1, "Time: ");
                 OLED_ShowString(2, 1, "Timing...     ");
                 
-                // 等待按键松开，引脚也是 PB11
+                // 死等松手
                 while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_11) == GPIO_PIN_RESET); 
             }
         }
     }
 
+    // ==========================================
+    // 2. 计时中的显示逻辑（核心！）
+    // ==========================================
     if (is_timing == 1)
     {
         uint32_t current_time = HAL_GetTick();
         uint32_t elapsed_time = current_time - start_time; 
         
-        OLED_ShowNum(1, 7, elapsed_time / 1000, 1); 
+        // 👇 把时间显示在屏幕上（保留1位小数）
+        OLED_ShowNum(1, 7, elapsed_time / 1000, 1); // 秒
         OLED_ShowString(1, 8, ".");
-        OLED_ShowNum(1, 9, (elapsed_time % 1000) / 100, 1); 
+        OLED_ShowNum(1, 9, (elapsed_time % 1000) / 100, 1); // 毫秒（0.1秒）
         OLED_ShowString(1, 10, "s   ");
 
+        // 如果你的屏幕需要刷新才更新，请把这句加回来
+        // OLED_Refresh(); 
+
+        // ==========================================
+        // 3. 到达 5 秒的动作
+        // ==========================================
         if (elapsed_time >= 5000) 
         {
-            is_timing = 0; 
+            is_timing = 0; // 🚨 先停表，防止无限循环触发！
             
             OLED_ShowString(1, 7, "5.0s");
             OLED_ShowString(2, 1, "Buzzer ON!    ");
             
-            // 蜂鸣器引脚改成了 PB15
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET); 
-            HAL_Delay(1000); 
+            // 低电平触发蜂鸣器响
             HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET); 
+            HAL_Delay(1000); 
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET);   
             
+            // 恢复界面
             OLED_ShowString(2, 1, "Press Key...  ");
         }
     }
+	  
+	 
   
     /* USER CODE END WHILE */
 

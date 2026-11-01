@@ -28,4 +28,4 @@ project_2_timer\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h
 project_2_timer\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h
 project_2_timer\main.o: ../Core/Inc/i2c.h
 project_2_timer\main.o: ../Core/Inc/gpio.h
-project_2_timer\main.o: ..\Hardware\OLED.h
+project_2_timer\main.o: ../Hardware/OLED.h
